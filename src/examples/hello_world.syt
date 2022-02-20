@@ -1,0 +1,8 @@
+
+class Animal<T> {
+    
+}
+
+:: main(argc: i32, argv: [string]) -> i32 {
+    return 0;
+}

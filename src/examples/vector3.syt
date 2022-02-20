@@ -1,0 +1,30 @@
+use std::math::{pow, sqrt, cos, acos};
+
+class Vector3 {
+    x: f32;
+    y: f32;
+    z: f32;
+
+    :: constructor(&self, x, y, z) {
+        self.x = x;
+        self.y = y;
+        self.z = z;
+    }
+
+    :: magnitude(&self) -> float {
+        return sqrt(pow(x, 2), pow(y, 2), pow(z, 2));
+    }
+
+    :: unit(&self) -> float {
+        magnitude: f32 = self.magnitude();
+        return Vector3 { self.x / magnitude, self.y / magnitude, self.z / magnitude };
+    }
+
+    static dot(v0: Vector3, v1: Vector3) {
+        return ( v0.x * v1.x ) + ( v0.y * v1.y ) + ( v0.z * v1.z );
+    }
+
+    static angle(v0: Vector3, v1: Vector3) {
+        return acos( Vector3::dot(v0, v1) / ( v0.magnitude(), v1.magnitude() ) );
+    }
+}

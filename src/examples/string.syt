@@ -1,0 +1,12 @@
+
+class String {
+    string: [char];
+
+    :: constructor(string: [char]) {
+        self.string = string;
+    }
+
+    static from(string: [char]) -> self {
+        return new String(string);
+    }
+}

@@ -1,0 +1,182 @@
+
+program                     =  { statements }
+statements                  = _{ SOI ~ NEWLINE* ~ statement* ~ EOI }
+block                       = _{ LBRACE ~ statement* ~ RBRACE }
+
+statement                   = _{ NEWLINE* ~ ( simple_statement | compound_statement ) ~ NEWLINE* }
+simple_statement            = _{ small_statement ~ SEMICOLON }
+small_statement             = _{ package_statement | import_statement | type_statement | use_statement | variable_declaration | return_statement | expression_statement }
+compound_statement          = _{ struct_declaration | class_definition | function_definition | function_declaration }
+
+WHITESPACE                  = _{ (" " | "\t" | "\r" | "\n")+ }
+COMMENT                     = _{ comment_block | comment_line }
+comment_line                = @{ "//" ~ (!"\n" ~ ANY)* }
+comment_block               = @{"/*" ~ (!"*/" ~ ANY)* ~ "*/"}
+newline                     = _{ (" " | "\t")* ~ ("\n" | "\r")+ ~ (" " | "\t")* }
+reserved                    =  { "true" | "false" | "null" | "type" | "struct" | "class" | "enum" }
+
+expression                  = _{ infix }
+infix                       =  { expression_inner ~ (binary_operator ~ expression_inner)* }
+expression_inner            = _{ call | literal | unary | variable }
+
+unary                       =  { unary_operator ~ (literal | variable) }
+
+// Call types:
+//
+// ```
+// foo() - call a function named `foo` in current namespace
+// std::io::println() - call a function named `println` in a package
+// animal.eat() - call a method named `eat` in a class instance `animal`
+// farm::farmer.work() - call a method named `work` in class instance `farmer` which is in package `farm`
+
+call                        =  { dotted ~ call_parameters }
+call_parameters             = _{ LBRACKET ~ (call_parameter ~ (COMMA ~ call_parameter)* )? ~ RBRACKET }
+call_parameter              =  { expression }
+
+literal                     = _{ class_constructor | struct_constructor | array | byte | string | float | integer | boolean }
+class_constructor           =  { "new" ~ scope_resolution ~ call_parameters }
+
+struct_constructor          =  { scope_resolution ~ struct_parameters }
+struct_parameters           = _{ LBRACE ~ (struct_parameter ~ (COMMA ~ struct_parameter)* )? ~ RBRACE }
+struct_parameter            =  { expression }
+
+array                       = _{ LBRACKET ~ (expression ~ (COMMA ~ expression)*)? ~ RBRACKET }
+
+expression_statement        =  { expression }
+
+package_statement           =  { "package" ~ identifier }
+import_statement            =  { "import" ~ string }
+use_statement               =  { "use" ~ scope_resolution }
+type_statement              =  { "type" ~ identifier ~ COLON ~ data_type }
+
+variable_declaration        =  { identifier ~ COLON ~ data_type }
+variable_initialization     =  { identifier ~ COLON ~ data_type ~ equals ~ expression }
+variable_assignment         =  { dotted ~ assignment ~ expression }
+
+return_statement            =  { "return" ~ expression }
+
+struct_declaration          =  { "struct" ~ identifier ~ generic? ~ struct_body ~ SEMICOLON? }
+struct_body                 =  { LBRACE ~ NEWLINE* ~ ( variable_declaration ~ SEMICOLON ~ NEWLINE* )+ ~ RBRACE }
+
+class_definition            =  { "class" ~ identifier ~ generic? ~ block ~ SEMICOLON? }
+
+function_declaration        =  { "::" ~ identifier ~ generic? ~ LPAREN ~ typed_parameter_list ~ RPAREN ~ RARROW ~ data_type ~ COLON }
+function_definition         =  { "::" ~ identifier ~ generic? ~ LPAREN ~ typed_parameter_list ~ RPAREN ~ RARROW ~ data_type ~ block }
+constructor_definition      =  { "::" ~ "constructor" ~ LPAREN ~ typed_parameter_list ~ RPAREN ~ RARROW ~ data_type ~ block }
+
+generic_type                =  _{ data_type ~ ( COLON ~ identifier )? }
+generic                     =  _{ LANGLEBRACKET ~ generic_type ~ ( COMMA ~ generic_type )* ~ RANGLEBRACKET }
+
+data_type                   =  { type_specifier | immutable_type }
+immutable_type              =  { "!" ~ type_specifier }
+reference_type              =  { "&" ~ type_specifier }
+type_specifier              = _{ array_type | type_name | reference_type }
+array_type                  =  { (LBRACKET ~ type_specifier ~ RBRACKET)
+                               | (LBRACKET ~ type_specifier ~ COMMA ~ integer ~ RBRACKET) }
+struct_type                 =  { "struct" ~ scope_resolution }
+enum_type                   =  { "enum" ~ scope_resolution }
+type_name                   =  { "null" | "bool" | "byte" | "i8" | "i16" | "i32" | "i64" | "i128" | "u8" | "u16" | "u32" | "u64" | "u128" | "f32" | "f64" | defined_type | enum_type }
+defined_type                =  { scope_resolution }
+
+scope_resolution            =  { DOUBLECOLON? ~ identifier ~ ( DOUBLECOLON ~ identifier )* }
+dotted                      =  { scope_resolution ~ ( DOT ~ identifier )* }
+
+typed_parameter             =  { identifier ~ COLON ~ data_type }
+typed_parameter_list        =  { typed_parameter ~ ( COMMA ~ typed_parameter )* }
+
+integer                     = ${ integer_hexadecimal_sigil | integer_octal_sigil | integer_binary_sigil | integer_decimal | integer_zero }
+integer_decimal             =  { '1'..'9' ~ ('0'..'9' | "_")* }
+integer_hexadecimal         =  { ('0'..'9' | 'a'..'f' | 'A'..'F') ~ ('0'..'9' | 'a'..'f' | 'A'..'F' | "_")* }
+integer_hexadecimal_sigil   = _{ "0x" ~ integer_hexadecimal }
+integer_octal               =  { ('0'..'7') ~ ('0'..'7' | "_" )* }
+integer_octal_sigil         = _{ "0o" ~ integer_octal }
+integer_binary              =  { ('0'..'1') ~ ('0'..'1' | "_")* }
+integer_binary_sigil        = _{ "0b" ~ integer_binary }
+integer_zero                =  { "0" }
+
+float                       = @{ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT* }
+identifier                  = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+string                      = ${ string_single_line }
+string_single_line          = _{ string_delimiter ~ string_content ~ string_delimiter }
+string_content              = ${ (string_escape | !(string_delimiter | "\\") ~ ANY)* }
+string_delimiter            = _{ "\"" }
+string_unicode              = _{ "u" ~ ('0'..'9' | 'a'..'f' | 'A'..'F'){4} }
+string_escape               = _{ "\\" ~ ("\"" | "\\" | "a" | "b" | "f" | "n" | "r" | "t" | "v" | string_unicode) }
+
+byte                        = @{ SINGLEQUOTE ~ ANY ~ SINGLEQUOTE}
+boolean                     =  { boolean_true | boolean_false }
+boolean_true                =  { "true" }
+boolean_false               =  { "false" }
+null                        =  { "null" }
+
+variable = { scope_resolution }
+
+exponent                    =  { "**" }
+multiply                    =  { "*" }
+divide                      =  { "/" }
+modulus                     =  { "%" }
+plus                        =  { "+" }
+minus                       =  { "-" }
+shift_left                  =  { "<<" }
+shift_right                 =  { ">>" }
+less_than                   =  { "<" }
+less_than_or_equal          =  { "<=" }
+greater_than                =  { ">" }
+greater_than_or_equal       =  { ">=" }
+not_equal                   =  { "!=" }
+equal                       =  { "==" }
+logical_and                 =  { "&&" }
+logical_or                  =  { "||" }
+logical_not                 =  { "!" }
+bitwise_and                 =  { "&" }
+bitwise_or                  =  { "|" }
+bitwise_xor                 =  { "^" }
+assign                      =  { "=" }
+all_operators               = _{
+                                 exponent |
+                                 multiply | divide | modulus |
+                                 plus | minus |
+                                 shift_left | shift_right |
+                                 less_than_or_equal | less_than |
+                                 greater_than_or_equal | greater_than |
+                                 not_equal | equal |
+                                 logical_and | logical_or | logical_not |
+                                 bitwise_and | bitwise_or | bitwise_xor |
+                                 assign
+                                }
+binary_operator             = _{
+                                 exponent |
+                                 multiply | divide | modulus |
+                                 plus | minus |
+                                 shift_left | shift_right |
+                                 less_than_or_equal | less_than |
+                                 greater_than_or_equal | greater_than |
+                                 not_equal | equal |
+                                 logical_and | logical_or |
+                                 bitwise_and | bitwise_or | bitwise_xor
+                               }
+unary_operator              = _{ plus | minus | logical_not }
+
+assignment                  =  { equals | "+=" | "-=" | "*=" | "/=" | "%=" }
+equals                      =  { "=" }
+
+SEMICOLON                   = _{ ";" }
+COLON                       = _{ ":" }
+DOUBLECOLON                 = _{ "::" }
+COMMA                       = _{ "," }
+DOT                         = _{ "." }
+LBRACKET                    = _{ "[" }
+RBRACKET                    = _{ "]" }
+LPAREN                      = _{ "(" }
+RPAREN                      = _{ ")" }
+LBRACE                      = _{ "{" }
+RBRACE                      = _{ "}" }
+
+RARROW                      = { "->" }
+
+LANGLEBRACKET               = _{ "<" }
+RANGLEBRACKET               = _{ ">" }
+
+SINGLEQUOTE                 = _{ "'" }
+DOUBLEQUOTE                 = _{ "\"" }
