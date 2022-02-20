@@ -45,6 +45,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "elapse-parser"
+version = "0.1.0"
+dependencies = [
+ "lazy_static",
+ "pest",
+ "pest_consume",
+ "pest_consume_macros",
+ "pest_derive",
+]
+
+[[package]]
+name = "elapse_lang"
+version = "0.1.0"
+dependencies = [
+ "elapse-parser",
+ "pest",
+ "pest_derive",
+]
+
+[[package]]
 name = "fake-simd"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -158,26 +178,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "864d3e96a899863136fc6e99f3d7cae289dafe43bf2c5ac19b70df7210c0a145"
 dependencies = [
  "proc-macro2",
-]
-
-[[package]]
-name = "scythe-parser"
-version = "0.1.0"
-dependencies = [
- "lazy_static",
- "pest",
- "pest_consume",
- "pest_consume_macros",
- "pest_derive",
-]
-
-[[package]]
-name = "scythe_lang"
-version = "0.1.0"
-dependencies = [
- "pest",
- "pest_derive",
- "scythe-parser",
 ]
 
 [[package]]

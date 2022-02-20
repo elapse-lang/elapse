@@ -1,4 +1,4 @@
-use scythe_parser::ast::parse_scythe;
+use elapse_parser::ast::parse_elapse;
 use std::{env, fs};
 
 fn main() {
@@ -17,7 +17,7 @@ fn main() {
 
     let source = fs::read_to_string(path)
         .expect("Unable to read source file.");
-    let ast = parse_scythe(&source);
+    let ast = parse_elapse(&source);
     match ast {
         Ok(v) => println!("working"),
         Err(e) => println!("{:?}", e)

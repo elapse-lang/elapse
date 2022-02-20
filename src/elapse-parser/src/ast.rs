@@ -1,4 +1,4 @@
-use crate::grammar::{ScytheParser, Rule};
+use crate::grammar::{ElapseParser, Rule};
 use crate::expression::*;
 
 use crate::statement::*;
@@ -11,7 +11,7 @@ type Result<T> = std::result::Result<T, Error<Rule>>;
 type Node<'i> = pest_consume::Node<'i, Rule, ()>;
 
 #[pest_consume::parser]
-impl ScytheParser {
+impl ElapseParser {
     fn EOI(_input: Node) -> Result<()> {
         Ok(())
     }
@@ -79,8 +79,8 @@ pub trait Statement {
     fn display(&self) -> String;
 }
 
-pub fn parse_scythe(input_str: &str) -> Result<Vec<Box<dyn Statement>>> {
-    let inputs = ScytheParser::parse_with_userdata(Rule::program, input_str, ())?;
+pub fn parse_elapse(input_str: &str) -> Result<Vec<Box<dyn Statement>>> {
+    let inputs = ElapseParser::parse_with_userdata(Rule::program, input_str, ())?;
     let input = inputs.single()?;
-    ScytheParser::program(input)
+    ElapseParser::program(input)
 }
