@@ -1,5 +1,5 @@
 
-program                     =  { statements }
+file                     =  { statements }
 statements                  = _{ SOI ~ NEWLINE* ~ statement* ~ EOI }
 block                       = _{ LBRACE ~ statement* ~ RBRACE }
 
@@ -15,8 +15,8 @@ comment_block               = @{"/*" ~ (!"*/" ~ ANY)* ~ "*/"}
 newline                     = _{ (" " | "\t")* ~ ("\n" | "\r")+ ~ (" " | "\t")* }
 reserved                    =  { "true" | "false" | "null" | "type" | "struct" | "class" | "enum" }
 
-expression                  = _{ infix }
-infix                       =  { expression_inner ~ (binary_operator ~ expression_inner)* }
+expression                  =  { infix }
+infix                       = _{ expression_inner ~ (binary_operator ~ expression_inner)* }
 expression_inner            = _{ call | literal | unary | variable }
 
 unary                       =  { unary_operator ~ (literal | variable) }

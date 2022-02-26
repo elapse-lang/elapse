@@ -1,11 +1,11 @@
-use crate::ast::Statement;
+use crate::ast::{Span, Statement};
 
 pub struct Eoi {
-    line: i32
+    span: Span
 }
 
 impl Statement for Eoi {
     fn display(&self) -> String {
-        String::from("eoi")
+        String::from("Eoi")
     }
 }

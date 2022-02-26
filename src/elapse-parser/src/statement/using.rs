@@ -1,7 +1,8 @@
-use crate::ast::Statement;
+use crate::ast::{Span, Statement};
 use crate::expression::{Expression, ScopeResolution};
 
 pub struct Use {
+    pub span: Span,
     pub scope: ScopeResolution
 }
 

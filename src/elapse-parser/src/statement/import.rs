@@ -1,11 +1,13 @@
-use crate::ast::Statement;
+use crate::ast::{Span, Statement};
+use crate::expression::Str;
 
 pub struct Import {
-    pub path: String
+    pub span: Span,
+    pub path: Str
 }
 
 impl Statement for Import {
     fn display(&self) -> String {
-        format!("import {};", self.path)
+        format!("import {};", self.path.string)
     }
 }

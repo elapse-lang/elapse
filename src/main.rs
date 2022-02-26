@@ -19,7 +19,7 @@ fn main() {
         .expect("Unable to read source file.");
     let ast = parse_elapse(&source);
     match ast {
-        Ok(v) => println!("working"),
+        Ok(_) => println!("working"),
         Err(e) => println!("{:?}", e)
     }
 }

@@ -16,46 +16,61 @@ impl ElapseParser {
         Ok(())
     }
     fn identifier(input: Node) -> Result<Identifier> {
-        Ok(Identifier{ name: input.as_str().to_owned() })
+        let span: Span = Span::from_span(input.as_span());
+        Ok(Identifier{ span, name: input.as_str().to_owned() })
     }
     fn scope_resolution(input: Node) -> Result<ScopeResolution> {
+        let span: Span = Span::from_span(input.as_span());
         Ok(match_nodes!(input.into_children();
             [identifier(ident)..] => {
                 let identifiers = ident.collect();
-                ScopeResolution{ scope: identifiers }
+                ScopeResolution{ span, scope: identifiers }
             }
         ))
     }
-    fn integer_decimal(input: Node) -> Result<i128> {
-        input.as_str()
-            .parse::<i128>()
-            .map_err(|e| input.error(e))
+    fn integer_decimal(input: Node) -> Result<Integer> {
+        let span: Span = Span::from_span(input.as_span());
+        Ok(Integer { span,
+                     value: input.as_str().to_owned() })
     }
-    fn string(input: Node) -> Result<String> {
-        Ok(input.as_str().to_owned())
+    fn string(input: Node) -> Result<Str> {
+        let span: Span = Span::from_span(input.as_span());
+        Ok(Str{ span, string: String::from(input.as_str().to_owned()) })
     }
-    // fn infix(input: Node) -> Result<Infix> {
-
-    // }
+    fn expression(input: Node) -> Result<Box<dyn Expression>> {
+        let nodes = { input.into_children() };
+        //if nodes.count() == 1 {
+            Ok(match_nodes!(nodes;
+                [string(s)] => Box::new(s),
+                [identifier(i)] => Box::new(i),
+                [integer_decimal(i)] => Box::new(i),
+                [scope_resolution(s)] => Box::new(s)
+            ))
+        //} 
+    }
     fn import_statement(input: Node) -> Result<impl Statement> {
+        let span: Span = Span::from_span(input.as_span());
         Ok(match_nodes!(input.into_children();
             [string(path)] => {
                 import::Import {
+                    span,
                     path
                 }
             }
         ))
     }
     fn use_statement(input: Node) -> Result<impl Statement> {
+        let span: Span = Span::from_span(input.as_span());
         Ok(match_nodes!(input.into_children();
             [scope_resolution(scope)] => {
                 using::Use {
+                    span,
                     scope
                 }
             }
         ))
     }
-    fn program(input: Node) -> Result<Vec<Box<dyn Statement>>> {
+    fn file(input: Node) -> Result<Vec<Box<dyn Statement>>> {
         let nodes = { input.into_children() };
         let mut statements: Vec<Box<dyn Statement>> = Vec::new();
         for node in nodes {
@@ -75,12 +90,31 @@ impl ElapseParser {
     }
 }
 
+pub struct LineColumn {
+    line: usize,
+    column: usize
+}
+
+pub struct Span {
+    start: LineColumn,
+    end: LineColumn
+}
+
+impl Span {
+    pub fn from_span(span: pest::Span) -> Self {
+        let start = span.start_pos().line_col();
+        let end = span.end_pos().line_col();
+
+        Self { start: LineColumn{ line: start.0, column: start.1 }, end: LineColumn{ line: end.0, column: end.1 } }
+    }
+}
+
 pub trait Statement {
     fn display(&self) -> String;
 }
 
 pub fn parse_elapse(input_str: &str) -> Result<Vec<Box<dyn Statement>>> {
-    let inputs = ElapseParser::parse_with_userdata(Rule::program, input_str, ())?;
+    let inputs = ElapseParser::parse_with_userdata(Rule::file, input_str, ())?;
     let input = inputs.single()?;
-    ElapseParser::program(input)
+    ElapseParser::file(input)
 }

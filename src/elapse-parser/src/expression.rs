@@ -1,9 +1,33 @@
+use crate::ast::Span;
 
 pub trait Expression {
     fn display(&self) -> String;
 }
 
+pub struct Str {
+    pub span: Span,
+    pub string: String
+}
+
+impl Expression for Str {
+    fn display(&self) -> String {
+        String::from(self.string.to_string())
+    }
+}
+
+pub struct Integer {
+    pub span: Span,
+    pub value: String
+}
+
+impl Expression for Integer {
+    fn display(&self) -> String {
+        String::from(self.value.to_string())
+    }
+}
+
 pub struct Identifier {
+    pub span: Span,
     pub name: String
 }
 
@@ -14,6 +38,7 @@ impl Expression for Identifier {
 }
 
 pub struct ScopeResolution {
+    pub span: Span,
     pub scope: Vec<Identifier>
 }
 
